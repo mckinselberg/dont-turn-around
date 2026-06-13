@@ -35,7 +35,8 @@ import { PlayerAudio } from '../audio/PlayerAudio';
 import { AudioEngine } from '../audio/AudioEngine';
 
 const START_POS = new Vector3(0, 1.7, 0);
-const DEST_POS = new Vector3(120, 0, 80);
+// ~235 units away — at jog speed ~35-40s in open air, ~3-4 min through the forest
+const DEST_POS = new Vector3(190, 0, 140);
 
 export class Game {
   private engine: Engine;
@@ -153,7 +154,7 @@ export class Game {
 
     // Player audio
     this.playerAudio.updateBreath(this.player.breath.getLoad());
-    this.playerAudio.updateFootsteps(speed, this.player.breath.getLoad());
+    this.playerAudio.updateFootsteps(speed);
 
     // Catch check
     if (pursuerModel.state === 'caught') {

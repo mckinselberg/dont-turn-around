@@ -103,31 +103,71 @@ export class AudioEngine {
     }, 1500);
   }
 
-  // Distant footstep thud
-  static playFootstep(panValue: number = 0, volume: number = -18): void {
+  // Forest floor footstep — layered crunch with optional twig crack.
+  // crunch: bandpass white noise (leaf/debris) + lowpass brown noise (foot weight)
+  // crack:  highpass white noise (twig snap), fires ~20% of player steps, ~30% pursuer
+  static playForestStep(panValue: number = 0, volumeDb: number = -20, withCrack: boolean = false): void {
     const panner = new Tone.Panner(panValue);
-    const filter = new Tone.Filter(200, 'lowpass');
-    const gain = new Tone.Gain(Tone.dbToGain(volume));
-    const env = new Tone.AmplitudeEnvelope({ attack: 0.001, decay: 0.12, sustain: 0, release: 0.08 });
-    const noise = new Tone.Noise('brown');
-
-    noise.connect(filter);
-    filter.connect(env);
-    env.connect(gain);
-    gain.connect(panner);
     panner.toDestination();
 
-    noise.start();
-    env.triggerAttackRelease(0.12);
+    // Crunch layer — the main lettuce-tear character
+    const crunchFreq = 900 + Math.random() * 600;  // vary each step
+    const crunchNoise = new Tone.Noise('white');
+    const crunchFilter = new Tone.Filter(crunchFreq, 'bandpass');
+    (crunchFilter as unknown as { Q: { value: number } }).Q.value = 4;
+    const crunchEnv = new Tone.AmplitudeEnvelope({
+      attack: 0.001, decay: 0.05 + Math.random() * 0.025, sustain: 0, release: 0.018,
+    });
+    const crunchGain = new Tone.Gain(Tone.dbToGain(volumeDb));
+    crunchNoise.connect(crunchFilter);
+    crunchFilter.connect(crunchEnv);
+    crunchEnv.connect(crunchGain);
+    crunchGain.connect(panner);
+    crunchNoise.start();
+    crunchEnv.triggerAttackRelease(0.07);
+
+    // Weight layer — low thud of foot pressing down
+    const weightNoise = new Tone.Noise('brown');
+    const weightFilter = new Tone.Filter(260, 'lowpass');
+    const weightEnv = new Tone.AmplitudeEnvelope({
+      attack: 0.001, decay: 0.035, sustain: 0, release: 0.01,
+    });
+    const weightGain = new Tone.Gain(Tone.dbToGain(volumeDb - 3));
+    weightNoise.connect(weightFilter);
+    weightFilter.connect(weightEnv);
+    weightEnv.connect(weightGain);
+    weightGain.connect(panner);
+    weightNoise.start();
+    weightEnv.triggerAttackRelease(0.04);
+
+    // Optional crack — sharp twig snap on top
+    if (withCrack) {
+      const crackNoise = new Tone.Noise('white');
+      const crackFilter = new Tone.Filter(3500 + Math.random() * 1200, 'highpass');
+      const crackEnv = new Tone.AmplitudeEnvelope({
+        attack: 0.0005, decay: 0.016 + Math.random() * 0.012, sustain: 0, release: 0.008,
+      });
+      const crackGain = new Tone.Gain(Tone.dbToGain(volumeDb + 2));
+      crackNoise.connect(crackFilter);
+      crackFilter.connect(crackEnv);
+      crackEnv.connect(crackGain);
+      crackGain.connect(panner);
+      crackNoise.start();
+      crackEnv.triggerAttackRelease(0.025);
+
+      setTimeout(() => {
+        crackNoise.stop(); crackNoise.dispose();
+        crackFilter.dispose(); crackEnv.dispose(); crackGain.dispose();
+      }, 300);
+    }
 
     setTimeout(() => {
-      noise.stop();
-      noise.dispose();
-      filter.dispose();
-      env.dispose();
-      gain.dispose();
+      crunchNoise.stop(); crunchNoise.dispose();
+      crunchFilter.dispose(); crunchEnv.dispose(); crunchGain.dispose();
+      weightNoise.stop(); weightNoise.dispose();
+      weightFilter.dispose(); weightEnv.dispose(); weightGain.dispose();
       panner.dispose();
-    }, 500);
+    }, 400);
   }
 
   // Destination chime — bell-like tone

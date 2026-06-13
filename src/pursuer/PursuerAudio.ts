@@ -1,7 +1,6 @@
 import { AudioEngine } from '../audio/AudioEngine';
 import type { PursuerState } from '../types';
 
-// All sound from the pursuer — footsteps, branches, leaves
 export class PursuerAudio {
   private footstepTimer = 0;
   private rustleTimer = 0;
@@ -10,41 +9,40 @@ export class PursuerAudio {
 
   setMuted(muted: boolean): void { this.muted = muted; }
 
-  // dt in seconds, pursuerAngle: angle from player forward (-1..1 pan), state, weatherMask 0..1
   update(dt: number, pursuerAngle: number, state: PursuerState, weatherMask: number): void {
     if (this.muted || state === 'caught') return;
-    if (state === 'far') {
-      this.updateFar(dt, pursuerAngle, weatherMask);
-    } else if (state === 'near') {
-      this.updateNear(dt, pursuerAngle, weatherMask);
-    } else if (state === 'close') {
-      this.updateClose(dt, pursuerAngle, weatherMask);
-    }
+    if (state === 'far')   this.updateFar(dt, pursuerAngle, weatherMask);
+    if (state === 'near')  this.updateNear(dt, pursuerAngle, weatherMask);
+    if (state === 'close') this.updateClose(dt, pursuerAngle, weatherMask);
   }
 
   private updateFar(dt: number, pan: number, mask: number): void {
-    // Occasional very faint branch snaps / distant movement
+    // Just occasional very distant snaps — barely there
     this.snapTimer -= dt;
     if (this.snapTimer <= 0) {
-      this.snapTimer = 8 + Math.random() * 12;
+      this.snapTimer = 10 + Math.random() * 14;
       if (Math.random() > mask * 0.8) {
-        AudioEngine.playBranchSnap(pan, -38 + Math.random() * 6);
+        AudioEngine.playBranchSnap(pan, -40 + Math.random() * 5);
       }
     }
   }
 
   private updateNear(dt: number, pan: number, mask: number): void {
+    // Audible footsteps — crunch with occasional crack, panned to pursuer direction
     this.footstepTimer -= dt;
     if (this.footstepTimer <= 0) {
-      this.footstepTimer = 0.9 + Math.random() * 0.6;
+      this.footstepTimer = 0.85 + Math.random() * 0.55;
       if (Math.random() > mask * 0.5) {
-        AudioEngine.playFootstep(pan, -26 + Math.random() * 4);
+        const vol = -24 + Math.random() * 3;
+        const crack = Math.random() < 0.28;
+        AudioEngine.playForestStep(pan, vol, crack);
       }
     }
 
+    // Occasional leaf rustle between steps
     this.rustleTimer -= dt;
     if (this.rustleTimer <= 0) {
-      this.rustleTimer = 2.5 + Math.random() * 3;
+      this.rustleTimer = 2.8 + Math.random() * 3.5;
       if (Math.random() > mask * 0.4) {
         AudioEngine.playLeafRustle(pan, -22 + Math.random() * 4);
       }
@@ -52,36 +50,34 @@ export class PursuerAudio {
   }
 
   private updateClose(dt: number, pan: number, mask: number): void {
+    // Rapid, loud footsteps — unmistakably something closing in
     this.footstepTimer -= dt;
     if (this.footstepTimer <= 0) {
-      this.footstepTimer = 0.45 + Math.random() * 0.25;
-      // Close footsteps are louder and more varied
+      this.footstepTimer = 0.4 + Math.random() * 0.22;
       if (Math.random() > mask * 0.25) {
-        AudioEngine.playFootstep(pan, -10 + Math.random() * 4);
+        // Close steps are heavier — slightly lower crunch freq, louder
+        const vol = -8 + Math.random() * 3;
+        const crack = Math.random() < 0.35;  // more cracks — aggressive movement
+        AudioEngine.playForestStep(pan, vol, crack);
       }
     }
 
+    // Brush through leaves
     this.rustleTimer -= dt;
     if (this.rustleTimer <= 0) {
-      this.rustleTimer = 0.8 + Math.random() * 1.0;
+      this.rustleTimer = 0.7 + Math.random() * 0.9;
       if (Math.random() > mask * 0.2) {
-        AudioEngine.playLeafRustle(pan, -8 + Math.random() * 3);
+        AudioEngine.playLeafRustle(pan, -7 + Math.random() * 3);
       }
     }
 
+    // Branch snaps — something large moving fast
     this.snapTimer -= dt;
     if (this.snapTimer <= 0) {
-      this.snapTimer = 1.5 + Math.random() * 2;
+      this.snapTimer = 1.4 + Math.random() * 1.8;
       if (Math.random() > mask * 0.2) {
-        AudioEngine.playBranchSnap(pan, -6 + Math.random() * 3);
+        AudioEngine.playBranchSnap(pan, -5 + Math.random() * 3);
       }
     }
-  }
-}
-
-// Extend AudioEngine with volume param for branch snap
-declare module '../audio/AudioEngine' {
-  interface AudioEngineStatic {
-    playBranchSnap(panValue?: number, volume?: number): void;
   }
 }
