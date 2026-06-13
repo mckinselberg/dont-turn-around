@@ -130,6 +130,17 @@ export class DevHUD {
       this.controls.setBreathAudioMuted(!on);
     }));
 
+    panel.appendChild(toggleRow('pursuer eyes', true, (on) => {
+      this.controls.setWatcherEnabled(on);
+    }));
+
+    // Force-spawn button so you can study the effect on demand
+    const spawnBtn = document.createElement('button');
+    spawnBtn.className = 'dh-action';
+    spawnBtn.textContent = 'spawn eyes now';
+    spawnBtn.addEventListener('click', () => this.controls.forceSpawnEyes());
+    panel.appendChild(spawnBtn);
+
     // ── GRAPHICS ───────────────────────────────────────────
     panel.appendChild(sectionLabel('graphics'));
 

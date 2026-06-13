@@ -18,6 +18,8 @@ export interface GameControls {
   setWindOverride: (v: number | null) => void;
   setPursuerAudioMuted: (muted: boolean) => void;
   setBreathAudioMuted: (muted: boolean) => void;
+  setWatcherEnabled: (enabled: boolean) => void;
+  forceSpawnEyes: () => void;
 }
 import { EXPERIENCE_PROFILES } from '../config/experienceProfiles';
 import { RUN_PROFILES } from '../config/runProfiles';
@@ -276,6 +278,8 @@ export class Game {
       setWindOverride: (v) => this.weather.setWindOverride(v),
       setPursuerAudioMuted: (muted) => this.pursuerAudio.setMuted(muted),
       setBreathAudioMuted: (muted) => this.playerAudio.setBreathMuted(muted),
+      setWatcherEnabled: (enabled) => this.watcher.setEnabled(enabled),
+      forceSpawnEyes: () => this.watcher.forceSpawn(this.pursuerPos),
     };
   }
 

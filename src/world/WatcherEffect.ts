@@ -14,12 +14,24 @@ const LOOK_ANGLE_RAD = 0.6; // ~34 degrees
 export class WatcherEffect {
   private scene: Scene;
   private mode: ExperienceMode;
-  private cooldown = 6.0;       // seconds before first possible trigger
+  private cooldown = 6.0;
   private activePairs: Mesh[][] = [];
+  private enabled = true;
 
   constructor(scene: Scene, mode: ExperienceMode) {
     this.scene = scene;
     this.mode = mode;
+  }
+
+  setEnabled(enabled: boolean): void {
+    this.enabled = enabled;
+    // Reset cooldown so eyes can appear quickly when re-enabled for study
+    if (enabled) this.cooldown = 0.5;
+  }
+
+  // Force-spawn eyes at the pursuer position immediately — for dev study
+  forceSpawn(pursuerPos: { x: number; z: number }, state: PursuerState = 'close'): void {
+    this.spawnEyes(pursuerPos, state);
   }
 
   update(
@@ -30,6 +42,7 @@ export class WatcherEffect {
     pursuerState: PursuerState,
     onAdrenalineSpike: () => void,
   ): void {
+    if (!this.enabled) return;
     this.cooldown -= dt;
     if (this.cooldown > 0) return;
     if (pursuerState === 'far' || pursuerState === 'caught') return;
